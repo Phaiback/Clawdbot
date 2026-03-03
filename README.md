@@ -8,6 +8,40 @@ PDF editing tool with support for merging, splitting, rotating, text extraction,
 pip install -r requirements.txt
 ```
 
+## Word/DOCX Editing (`word_editor.py`)
+
+```bash
+# DOCX → PDF  (footnotes, styles, tables all preserved)
+python3 word_editor.py docx-to-pdf input.docx -o output.pdf
+
+# PDF → DOCX
+python3 word_editor.py pdf-to-docx input.pdf -o output.docx
+
+# Create a new DOCX
+python3 word_editor.py create -o new.docx --title "Titel" --body "Inhalt"
+
+# Find & replace (formatting stays intact)
+python3 word_editor.py find-replace input.docx -o output.docx --old "alt" --new "neu"
+
+# Add paragraph (bold, centered, font size 14)
+python3 word_editor.py add-paragraph input.docx -o output.docx \
+    --text "Neuer Absatz" --bold --align center --font-size 14
+
+# Change font throughout the document
+python3 word_editor.py set-font input.docx -o output.docx --font-name "Arial" --font-size 12
+
+# Document info (page count, styles, footnotes)
+python3 word_editor.py info input.docx
+```
+
+> **Fußnoten & Formatierung**: `docx-to-pdf` nutzt mammoth + weasyprint.
+> Fußnoten werden als nummerierte Liste am Seitenende korrekt übertragen.
+> `find-replace` rekonstruiert bei split runs den vollen Text ohne Formatierungsverlust.
+
+---
+
+## PDF Editing (`pdf_editor.py`)
+
 ## Usage
 
 ```bash
