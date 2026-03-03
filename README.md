@@ -64,4 +64,14 @@ python3 pdf_editor.py watermark input.pdf -o output.pdf -t "VERTRAULICH"
 
 # Extract specific pages
 python3 pdf_editor.py extract-pages input.pdf -o output.pdf -p 1,3,5-7
+
+# Compress (reduce file size)
+python3 pdf_editor.py compress input.pdf -o compressed.pdf
+
+# Encrypt with a password
+python3 pdf_editor.py encrypt input.pdf -o locked.pdf -p secret
+python3 pdf_editor.py encrypt input.pdf -o locked.pdf -p userpass --owner-password ownerpass
+
+# Decrypt (remove password protection)
+python3 pdf_editor.py decrypt locked.pdf -o unlocked.pdf -p secret
 ```

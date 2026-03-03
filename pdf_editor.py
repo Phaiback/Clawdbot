@@ -113,6 +113,52 @@ def extract_pages(input_file: str, output_file: str, pages: list[int]) -> None:
     print(f"Extracted pages {pages} from '{input_file}' → '{output_file}'")
 
 
+def compress_pdf(input_file: str, output_file: str) -> None:
+    """Compress a PDF by applying FlateDecode to each page's content streams."""
+    reader = PdfReader(input_file)
+    writer = PdfWriter()
+    for page in reader.pages:
+        page.compress_content_streams()
+        writer.add_page(page)
+    writer.compress_identical_objects()
+    with open(output_file, "wb") as f:
+        writer.write(f)
+    print(f"Compressed '{input_file}' → '{output_file}'")
+
+
+def encrypt_pdf(
+    input_file: str,
+    output_file: str,
+    user_password: str,
+    owner_password: str | None = None,
+) -> None:
+    """Encrypt a PDF with a user password (and optional separate owner password)."""
+    reader = PdfReader(input_file)
+    writer = PdfWriter()
+    for page in reader.pages:
+        writer.add_page(page)
+    writer.encrypt(user_password, owner_password)
+    with open(output_file, "wb") as f:
+        writer.write(f)
+    print(f"Encrypted '{input_file}' → '{output_file}'")
+
+
+def decrypt_pdf(input_file: str, output_file: str, password: str) -> None:
+    """Remove password protection from an encrypted PDF."""
+    reader = PdfReader(input_file)
+    if not reader.is_encrypted:
+        raise ValueError(f"'{input_file}' is not encrypted")
+    result = reader.decrypt(password)
+    if result == 0:
+        raise ValueError("Incorrect password; could not decrypt the PDF")
+    writer = PdfWriter()
+    for page in reader.pages:
+        writer.add_page(page)
+    with open(output_file, "wb") as f:
+        writer.write(f)
+    print(f"Decrypted '{input_file}' → '{output_file}'")
+
+
 def _parse_page_list(value: str) -> list[int]:
     """Parse a comma-separated page list like '1,3,5-7'."""
     pages: list[int] = []
@@ -167,6 +213,27 @@ def main() -> None:
     p_ep.add_argument("-o", "--output", required=True, help="Output PDF file")
     p_ep.add_argument("-p", "--pages", required=True, help="Pages to extract, e.g. 1,3,5-7")
 
+    # compress
+    p_compress = sub.add_parser("compress", help="Reduce PDF file size via stream compression")
+    p_compress.add_argument("input", help="Input PDF file")
+    p_compress.add_argument("-o", "--output", required=True, help="Output PDF file")
+
+    # encrypt
+    p_encrypt = sub.add_parser("encrypt", help="Password-protect a PDF")
+    p_encrypt.add_argument("input", help="Input PDF file")
+    p_encrypt.add_argument("-o", "--output", required=True, help="Output PDF file")
+    p_encrypt.add_argument("-p", "--user-password", required=True, dest="user_password",
+                           help="Password required to open the PDF")
+    p_encrypt.add_argument("--owner-password", default=None, dest="owner_password",
+                           help="Owner password (unrestricted access); defaults to user password if omitted")
+
+    # decrypt
+    p_decrypt = sub.add_parser("decrypt", help="Remove password protection from an encrypted PDF")
+    p_decrypt.add_argument("input", help="Input PDF file")
+    p_decrypt.add_argument("-o", "--output", required=True, help="Output PDF file")
+    p_decrypt.add_argument("-p", "--password", required=True,
+                           help="Password to unlock the PDF")
+
     args = parser.parse_args()
 
     try:
@@ -184,6 +251,12 @@ def main() -> None:
         elif args.command == "extract-pages":
             pages = _parse_page_list(args.pages)
             extract_pages(args.input, args.output, pages)
+        elif args.command == "compress":
+            compress_pdf(args.input, args.output)
+        elif args.command == "encrypt":
+            encrypt_pdf(args.input, args.output, args.user_password, args.owner_password)
+        elif args.command == "decrypt":
+            decrypt_pdf(args.input, args.output, args.password)
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
